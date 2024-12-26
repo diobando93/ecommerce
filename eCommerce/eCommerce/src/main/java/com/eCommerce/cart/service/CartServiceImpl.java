@@ -3,12 +3,14 @@ package com.eCommerce.cart.service;
 import java.util.Optional;
 import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.repository.CartRep;
+import com.eCommerce.exception.ApiException;
 import com.eCommerce.orders.model.Orders;
 import com.eCommerce.orders.model.OrdersPk;
 import com.eCommerce.orders.repository.OrderRep;
 import com.eCommerce.product.model.Product;
 import com.eCommerce.product.repository.ProductRep;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service("cartService")
@@ -33,16 +35,16 @@ public class CartServiceImpl implements CartService {
 
   @Override
   public void addProductToCart(String idCart, String idProduct, int quantity) {
-    Optional<Cart> cartOpt = cartRep.findById(idProduct);
+
+    Optional<Cart> cartOpt = cartRep.findById(idCart);
     Optional<Product> productOpt = productRep.findById(idProduct);
+
+    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
+
+    if (productOpt.isEmpty()) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.NOT_FOUND);
 
     Cart cart = cartOpt.get();
     Product product = productOpt.get();
-
-    if (cartOpt.isEmpty() || productOpt.isEmpty()) {
-      throw new IllegalArgumentException("Cart or Product not found");
-    }
-
     OrdersPk orderPk = new OrdersPk(idCart, idProduct);
     Orders order = orderRep.findById(orderPk).orElseGet(() -> {
       Orders newOrder = new Orders();
@@ -63,9 +65,7 @@ public class CartServiceImpl implements CartService {
     OrdersPk orderPk = new OrdersPk(idCart, idProduct);
     Optional<Orders> optionalOrder = orderRep.findById(orderPk);
 
-    if (optionalOrder.isEmpty()) {
-      throw new IllegalArgumentException("Order not found");
-    }
+    if (optionalOrder.isEmpty()) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.NOT_FOUND);
 
     Orders order = optionalOrder.get();
     order.setQuantity(quantity);
@@ -78,9 +78,7 @@ public class CartServiceImpl implements CartService {
 
     OrdersPk orderPk = new OrdersPk(idCart, idProduct);
 
-    if (!orderRep.existsById(orderPk)) {
-      throw new IllegalArgumentException("Order not found");
-    }
+    if (!orderRep.existsById(orderPk)) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.NOT_FOUND);
 
     orderRep.deleteById(orderPk);
 
@@ -89,15 +87,16 @@ public class CartServiceImpl implements CartService {
   @Override
   public Optional<Cart> getCart(String idCart) {
 
-    return cartRep.findById(idCart);
+    Optional<Cart> cartOpt = cartRep.findById(idCart);
+    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
+    return cartOpt;
 
   }
 
   @Override
   public void deleteCart(String idCart) {
-    if (!cartRep.existsById(idCart)) {
-      throw new IllegalArgumentException("Cart not found");
-    }
+
+    if (!cartRep.existsById(idCart)) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
 
     cartRep.deleteById(idCart);
 

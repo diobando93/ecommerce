@@ -43,7 +43,7 @@ public class CartController {
   @GetMapping("/{idCart}")
   public ResponseEntity<Cart> getCart(@PathVariable String idCart) {
     Optional<Cart> cart = cartService.getCart(idCart);
-    return cart.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    return ResponseEntity.ok(cart.get());
   }
 
   @DeleteMapping("/{idCart}")
