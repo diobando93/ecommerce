@@ -3,7 +3,7 @@ package com.eCommerce.product.service;
 import java.util.List;
 import com.eCommerce.product.model.Product;
 
-public interface ProodcutService {
+public interface ProductService {
 
   /**
    * Search all products

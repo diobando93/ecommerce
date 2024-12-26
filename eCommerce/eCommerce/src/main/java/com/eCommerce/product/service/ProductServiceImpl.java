@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("productService")
-public class ProductServiceImpl implements ProodcutService {
+public class ProductServiceImpl implements ProductService {
 
   @Autowired
   ProductRep productRep;

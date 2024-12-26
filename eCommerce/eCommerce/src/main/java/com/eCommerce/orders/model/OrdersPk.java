@@ -1,4 +1,4 @@
-package com.eCommerce.product.model;
+package com.eCommerce.orders.model;
 
 import java.io.Serializable;
 import jakarta.persistence.Column;
@@ -15,9 +15,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class ProductPk implements Serializable {
+public class OrdersPk implements Serializable {
 
-  @Column(name = "id_product", length = 40, nullable = false)
+  @Column(name = "id_cart")
+  private String idCart;
+
+  @Column(name = "id_product")
   private String idProduct;
 
 }
