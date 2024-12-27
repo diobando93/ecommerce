@@ -4,11 +4,13 @@ import java.time.LocalDateTime;
 import com.eCommerce.exception.ApiException;
 import com.eCommerce.exception.DefaultErrorDto;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class EcommerceErrorHandler {
 
   /**
@@ -21,6 +23,8 @@ public class EcommerceErrorHandler {
    * @return a {@link ResponseEntity} containing the structured error response.
    */
   @ExceptionHandler(ApiException.class)
+  @Operation(summary = "Handle API exceptions")
+  @ApiResponse(responseCode = "400", description = "Error response")
   public ResponseEntity<DefaultErrorDto> handleApiException(ApiException ex, WebRequest request) {
     DefaultErrorDto errorDTO = new DefaultErrorDto();
     errorDTO.setTimestamp(LocalDateTime.now().toString());

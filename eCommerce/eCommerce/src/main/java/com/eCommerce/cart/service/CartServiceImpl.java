@@ -1,5 +1,6 @@
 package com.eCommerce.cart.service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.repository.CartRep;
@@ -55,6 +56,7 @@ public class CartServiceImpl implements CartService {
     });
 
     order.setQuantity(order.getQuantity() + quantity);
+    cart.setUpdatedAt(LocalDateTime.now());
     orderRep.save(order);
 
   }
@@ -89,6 +91,8 @@ public class CartServiceImpl implements CartService {
 
     Optional<Cart> cartOpt = cartRep.findById(idCart);
     if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
+    // update date if the cart have prudcts
+    if (!cartOpt.get().getOrders().isEmpty()) cartOpt.get().setUpdatedAt(LocalDateTime.now());
     return cartOpt;
 
   }

@@ -33,6 +33,9 @@ public class Cart {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "updated_at", nullable = false)
+  private LocalDateTime updatedAt;
+
   @PrePersist
   private void generateIdAndTimestamp() {
     if (idCart == null || idCart.isEmpty()) {
@@ -40,6 +43,7 @@ public class Cart {
     }
     if (createdAt == null) {
       createdAt = LocalDateTime.now();
+      updatedAt = LocalDateTime.now();
     }
   }
 
