@@ -1,7 +1,9 @@
 package com.eCommerce.cart.service;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import com.eCommerce.cart.dto.CartDtoIn;
+import com.eCommerce.cart.dto.CartDtoOut;
 import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.repository.CartRep;
 import com.eCommerce.exception.ApiException;
@@ -13,51 +15,47 @@ import com.eCommerce.product.repository.ProductRep;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 @Service("cartService")
 public class CartServiceImpl implements CartService {
 
   @Autowired
-  private CartRep    cartRep;
+  private CartRep           cartRep;
 
   @Autowired
-  private ProductRep productRep;
+  private ProductRep        productRep;
 
   @Autowired
-  private OrderRep   orderRep;
+  private OrderRep          orderRep;
+
+  @Autowired
+  private CartServiceHelper cartServiceHelper;
 
   @Override
   public Cart createCart() {
 
     Cart cart = new Cart();
+
     return cartRep.save(cart);
 
   }
 
   @Override
-  public void addProductToCart(String idCart, String idProduct, int quantity) {
+  @Transactional
+  public CartDtoOut addProductsToCart(List<CartDtoIn> cartDtoInList) {
 
-    Optional<Cart> cartOpt = cartRep.findById(idCart);
-    Optional<Product> productOpt = productRep.findById(idProduct);
+    CartDtoOut cartDtoOut = new CartDtoOut();
 
-    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
+    for (CartDtoIn cartDtoIn : cartDtoInList) {
 
-    if (productOpt.isEmpty()) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.NOT_FOUND);
+      Cart cart = cartServiceHelper.searchCartById(cartDtoIn.getIdCart());
+      Product product = cartServiceHelper.searchProductById(cartDtoIn.getIdProduct());
+      cartDtoOut = cartServiceHelper.createOrUpdateOrder(cart, product, cartDtoIn.getQuantity());
 
-    Cart cart = cartOpt.get();
-    Product product = productOpt.get();
-    OrdersPk orderPk = new OrdersPk(idCart, idProduct);
-    Orders order = orderRep.findById(orderPk).orElseGet(() -> {
-      Orders newOrder = new Orders();
-      newOrder.setOrderPk(orderPk);
-      newOrder.setCart(cart);
-      newOrder.setProduct(product);
-      return newOrder;
-    });
+    }
 
-    order.setQuantity(order.getQuantity() + quantity);
-    cart.setUpdatedAt(LocalDateTime.now());
-    orderRep.save(order);
+    return cartDtoOut;
 
   }
 
@@ -87,14 +85,9 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public Optional<Cart> getCart(String idCart) {
-
-    Optional<Cart> cartOpt = cartRep.findById(idCart);
-    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
-    // update date if the cart have prudcts
-    if (!cartOpt.get().getOrders().isEmpty()) cartOpt.get().setUpdatedAt(LocalDateTime.now());
-    return cartOpt;
-
+  public CartDtoOut getCart(String idCart) {
+    Cart cart = cartServiceHelper.searchCartById(idCart);
+    return cartServiceHelper.convertToCartDto(cart);
   }
 
   @Override

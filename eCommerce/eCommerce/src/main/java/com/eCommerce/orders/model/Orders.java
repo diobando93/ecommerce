@@ -36,4 +36,7 @@ public class Orders {
   @Column(name = "quantity", nullable = false)
   private int      quantity;
 
+  @Column(name = "subTotal", nullable = false)
+  private double   subTotal;
+
 }

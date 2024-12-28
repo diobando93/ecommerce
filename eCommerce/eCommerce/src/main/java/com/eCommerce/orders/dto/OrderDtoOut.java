@@ -1,4 +1,4 @@
-package com.eCommerce.cart.dto;
+package com.eCommerce.orders.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,10 +9,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartDto {
+public class OrderDtoOut {
 
-  private String idCart;
   private String idProduct;
   private int    quantity;
+  private Double subTotal;
 
 }
