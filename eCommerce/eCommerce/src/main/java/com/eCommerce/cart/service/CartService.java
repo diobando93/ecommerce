@@ -17,26 +17,17 @@ public interface CartService {
   /**
    * Adds products to the cart. If the product already exists in the cart, its quantity is updated.
    * 
-   * @param idCart
-   *          ID of the cart.
-   * @param idProduct
-   *          ID of the product.
-   * @param quantity
-   *          Quantity to add.
+   * @param cartDtoInList
+   * 
    */
-  CartDtoOut addProductsToCart(List<CartDtoIn> cartDtoInList);
+  void addProductsToCart(List<CartDtoIn> cartDtoInList);
 
   /**
    * Updates the quantity of a product in the cart.
    * 
-   * @param idCart
-   *          ID of the cart.
-   * @param idProduct
-   *          ID of the product.
-   * @param quantity
-   *          New quantity of the product.
+   * @param cartDtoIn
    */
-  void updateProductQuantity(String idCart, String idProduct, int quantity);
+  void updateCart(CartDtoIn cartDtoIn);
 
   /**
    * Removes a product from the cart.

@@ -1,7 +1,9 @@
 package com.eCommerce.cart.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import com.eCommerce.cart.dto.CartDtoIn;
 import com.eCommerce.cart.dto.CartDtoOut;
 import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.repository.CartRep;
@@ -32,7 +34,7 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   public Cart searchCartById(String idCart) {
 
     Optional<Cart> cartOpt = cartRep.findById(idCart);
-    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.NOT_FOUND);
+    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.CONFLICT);
     return cartOpt.get();
   }
 
@@ -40,41 +42,88 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   public Product searchProductById(String idProduct) {
 
     Optional<Product> productOpt = productRep.findById(idProduct);
-    if (productOpt.isEmpty()) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.NOT_FOUND);
+    if (productOpt.isEmpty()) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.CONFLICT);
     return productOpt.get();
 
   }
 
   @Override
-  public CartDtoOut createOrUpdateOrder(Cart cart, Product product, int quantity) {
+  public boolean chkCartDtoInList(List<CartDtoIn> cartDtoInList) {
 
-    if (chkStockOfProdcut(product, quantity)) {
+    if (cartDtoInList.isEmpty()) throw new ApiException("We can´t add products list empty", HttpStatus.CONFLICT);
+
+    if (!chkAllCartAreTheSame(cartDtoInList)) throw new ApiException("The list have differents carts", HttpStatus.CONFLICT);
+
+    return true;
+  }
+
+  @Override
+  public boolean chkDatainCartDto(CartDtoIn cartDtoIn) {
+
+    if (cartDtoIn.getIdCart() == null) throw new ApiException("IdCart must not be null", HttpStatus.CONFLICT);
+    if (cartDtoIn.getIdProduct() == null) throw new ApiException("IdProduct must not be null", HttpStatus.CONFLICT);
+    if (cartDtoIn.getQuantity() == null) throw new ApiException("Quantity of product must not be null", HttpStatus.CONFLICT);
+
+    return true;
+  }
+
+  @Override
+  public void createOrUpdateCart(Cart cart, Product product, int quantity) {
+
+    if (quantity > 0 && chkStockOfProdcut(product, quantity)) {
 
       OrdersPk orderPk = new OrdersPk(cart.getIdCart(), product.getIdProduct());
       Optional<Orders> orderOpt = orderRep.findById(orderPk);
 
       if (!orderOpt.isEmpty()) {
         // update order and cart
-        Orders order = orderOpt.get();
-        order.setQuantity(quantity + order.getQuantity());
-        order.setSubTotal(order.getQuantity() * product.getPrice());
+        updateOrder(orderOpt.get(), product, quantity);
         cart.setUpdatedAt(LocalDateTime.now());
-        return convertToCartDto(cart);
+        orderRep.save(orderOpt.get());
+        cartRep.save(cart);
       } else {
         // create order and update cart
-        Orders newOrder = new Orders();
-        newOrder.setOrderPk(orderPk);
-        newOrder.setCart(cart);
-        newOrder.setProduct(product);
-        newOrder.setQuantity(quantity);
-        newOrder.setSubTotal(newOrder.getQuantity() * product.getPrice());
+        createNewOrder(orderPk, cart, product, quantity);
         cart.setUpdatedAt(LocalDateTime.now());
-        orderRep.save(newOrder);
-        return convertToCartDto(cart);
+        cartRep.save(cart);
       }
 
     } else {
-      throw new ApiException("Product with ID '" + product.getIdProduct() + "' not found", HttpStatus.NOT_FOUND);
+      if (quantity < 0)
+        throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' must be greater than 0", HttpStatus.CONFLICT);
+      throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' not in stock", HttpStatus.CONFLICT);
+    }
+
+  }
+
+  @Override
+  public void updateCart(Cart cart, Product product, int quantity) {
+
+    OrdersPk orderPk = new OrdersPk(cart.getIdCart(), product.getIdProduct());
+    Optional<Orders> orderOpt = orderRep.findById(orderPk);
+
+    if (orderOpt.isEmpty())
+      throw new ApiException("Order for idCart/idProduct: '" + cart.getIdCart() + "'/" + product.getIdProduct() + "' not exits", HttpStatus.CONFLICT);
+
+    Orders order = orderOpt.get();
+
+    if (quantity > 0 && chkStockOfProdcut(product, quantity)) {
+
+      order.setQuantity(quantity);
+      order.setSubTotal(quantity * product.getPrice());
+      cart.setUpdatedAt(LocalDateTime.now());
+      orderRep.save(order);
+      cartRep.save(cart);
+    } else if (quantity == 0) {
+
+      orderRep.deleteById(orderPk);
+      cart.setUpdatedAt(LocalDateTime.now());
+
+    } else {
+
+      if (quantity < 0)
+        throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' must be greater than 0", HttpStatus.CONFLICT);
+      throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' not in stock", HttpStatus.CONFLICT);
     }
 
   }
@@ -86,7 +135,7 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   }
 
   @Override
-  public CartDtoOut convertToCartDto(Cart cart) {
+  public CartDtoOut convertCartToDtoOut(Cart cart) {
 
     CartDtoOut cartDtoOut = new CartDtoOut();
     cartDtoOut.setIdCart(cart.getIdCart());
@@ -101,6 +150,57 @@ public class CartServiceHelperImpl implements CartServiceHelper {
     cartDtoOut.setStatus(cart.getStatus());
 
     return cartDtoOut;
+  }
+
+  public boolean chkAllCartAreTheSame(List<CartDtoIn> cartDtoInList) {
+    return cartDtoInList.stream().map(CartDtoIn::getIdCart).distinct().count() == 1;
+  }
+
+  public void createNewOrder(OrdersPk orderPk, Cart cart, Product product, int quantity) {
+    Orders newOrder = new Orders();
+    newOrder.setOrderPk(orderPk);
+    newOrder.setCart(cart);
+    newOrder.setProduct(product);
+    newOrder.setQuantity(quantity);
+    newOrder.setSubTotal(newOrder.getQuantity() * product.getPrice());
+    orderRep.save(newOrder);
+  }
+
+  public void updateOrder(Orders order, Product product, int quantity) {
+    order.setQuantity(quantity + order.getQuantity());
+    order.setSubTotal(order.getQuantity() * product.getPrice());
+  }
+
+  @Override
+  public void deleteCart(String idCart) {
+
+    if (idCart == null) throw new ApiException("IdCart must not be null", HttpStatus.CONFLICT);
+    if (!cartRep.existsById(idCart)) throw new ApiException("Cart with ID '" + idCart + "' not exits", HttpStatus.CONFLICT);
+
+    cartRep.deleteById(idCart);
+
+  }
+
+  @Override
+  public void removeProductFromCart(String idCart, String idProduct) {
+
+    if (idCart == null) throw new ApiException("IdCart must not be null", HttpStatus.CONFLICT);
+    if (idProduct == null) throw new ApiException("IdProduct must not be null", HttpStatus.CONFLICT);
+
+    OrdersPk orderPk = new OrdersPk(idCart, idProduct);
+    Optional<Orders> optionalOrder = orderRep.findById(orderPk);
+
+    if (optionalOrder.isEmpty())
+      throw new ApiException("Order for idCart/idProduct'" + idProduct + "'/" + idCart + "' not exits", HttpStatus.CONFLICT);
+
+    orderRep.deleteById(orderPk);
+
+  }
+
+  @Override
+  public Cart createCart() {
+    Cart cart = new Cart();
+    return cartRep.save(cart);
   }
 
 }

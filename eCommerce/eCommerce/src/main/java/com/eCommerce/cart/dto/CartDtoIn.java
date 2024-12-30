@@ -13,5 +13,5 @@ public class CartDtoIn {
 
   private String idCart;
   private String idProduct;
-  private int    quantity;
+  private Number quantity;
 }

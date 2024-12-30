@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,20 +42,20 @@ public class CartController {
       @ApiResponse(responseCode = "400", description = "Invalid input provided"),
       @ApiResponse(responseCode = "404", description = "Cart or Product not found") })
   @PostMapping("/addProductToCart")
-  public ResponseEntity<CartDtoOut> addProductToCart(@RequestBody List<CartDtoIn> cartDtoInList) {
-    CartDtoOut cartDtoOut = cartService.addProductsToCart(cartDtoInList);
-    return ResponseEntity.ok(cartDtoOut);
+  public ResponseEntity<Void> addProductToCart(@RequestBody List<CartDtoIn> cartDtoInList) {
+    cartService.addProductsToCart(cartDtoInList);
+    return ResponseEntity.ok().build();
   }
 
-  // @Operation(summary = "Update product quantity in cart", description = "Updates the quantity of a product in a specific cart.")
-  // @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Quantity updated successfully"),
-  // @ApiResponse(responseCode = "400", description = "Invalid input provided"),
-  // @ApiResponse(responseCode = "404", description = "Cart or Product not found") })
-  // @PutMapping("/updateCart")
-  // public ResponseEntity<Void> updateProductQuantity(@RequestBody CartDtoOut request) {
-  // cartService.updateProductQuantity(request.getIdCart(), request.getIdProduct(), request.getQuantity());
-  // return ResponseEntity.ok().build();
-  // }
+  @Operation(summary = "Update product quantity in cart", description = "Updates the quantity of a product in a specific cart.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Quantity updated successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid input provided"),
+      @ApiResponse(responseCode = "404", description = "Cart or Product not found") })
+  @PutMapping("/updateCart")
+  public ResponseEntity<Void> updateProductQuantity(@RequestBody CartDtoIn cartDtoIn) {
+    cartService.updateCart(cartDtoIn);
+    return ResponseEntity.ok().build();
+  }
 
   @Operation(summary = "Get cart by ID", description = "Retrieve a cart by its ID")
   @ApiResponses(
