@@ -1,0 +1,5 @@
+target/
+!target/eCommerce-0.0.1.jar
+.git
+.gitignore
+*.md

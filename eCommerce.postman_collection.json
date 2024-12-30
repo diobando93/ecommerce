@@ -1,0 +1,140 @@
+{
+	"info": {
+		"_postman_id": "b3b89d7b-1113-4e08-9209-75472d9a2347",
+		"name": "eCommerce",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12729833"
+	},
+	"item": [
+		{
+			"name": "GetAllProducts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/product",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"product"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateCart",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/cart",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"cart"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AddProdcutToCart",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\r\n{   \r\n  \"idCart\": \"f86d9cea-9be1-494a-aff4-8a01c0defae2\",\r\n  \"idProduct\": \"1\",\r\n  \"quantity\": 1\r\n},\r\n{   \r\n  \"idCart\": \"f86d9cea-9be1-494a-aff4-8a01c0defae2\",\r\n  \"idProduct\": \"2\",\r\n  \"quantity\": 2\r\n}\r\n]\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/cart/addProductToCart",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"cart",
+						"addProductToCart"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetCartById",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/cart/f86d9cea-9be1-494a-aff4-8a01c0defae2",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"cart",
+						"f86d9cea-9be1-494a-aff4-8a01c0defae2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "updateProductinCart",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{   \r\n  \"idCart\": \"f86d9cea-9be1-494a-aff4-8a01c0defae2\",\r\n  \"idProduct\": \"1\",\r\n  \"quantity\": 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/cart/updateCart",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"cart",
+						"updateCart"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteCartById",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/cart/f86d9cea-9be1-494a-aff4-8a01c0defae2",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"cart",
+						"f86d9cea-9be1-494a-aff4-8a01c0defae2"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

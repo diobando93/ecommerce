@@ -1,14 +1,13 @@
-# Usa una imagen base ligera de OpenJDK para Java 17
 FROM openjdk:17-jdk-slim
 
-# Define un argumento para el archivo JAR
-ARG JAR_FILE=target/ecommerce.jar
+# Directorio de trabajo en el contenedor
+WORKDIR /app
 
-# Copia el JAR generado al contenedor
-COPY ${JAR_FILE} app.jar
+# Copiar el jar de la aplicación
+COPY target/eCommerce-0.0.1.jar app.jar
 
-# Exponer el puerto 8080
+# Puerto expuesto por la aplicación
 EXPOSE 8080
 
-# Comando para ejecutar el JAR
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+# Comando para ejecutar la aplicación
+ENTRYPOINT ["java", "-jar", "app.jar"]
