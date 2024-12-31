@@ -60,13 +60,6 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public void removeProductFromCart(String idCart, String idProduct) {
-
-    cartServiceHelper.removeProductFromCart(idCart, idProduct);
-
-  }
-
-  @Override
   public void deleteCart(String idCart) {
 
     cartServiceHelper.deleteCart(idCart);

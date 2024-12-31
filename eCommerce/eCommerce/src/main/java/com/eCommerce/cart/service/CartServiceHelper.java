@@ -114,18 +114,6 @@ public interface CartServiceHelper {
   public void deleteCart(String idCart);
 
   /**
-   * Removes a specific product from a cart. Deletes the corresponding order and updates cart totals.
-   *
-   * @param idCart
-   *          ID of the cart
-   * @param idProduct
-   *          ID of the product to remove
-   * @throws ApiException
-   *           if cart or product ID is null, or if the order does not exist
-   */
-  public void removeProductFromCart(String idCart, String idProduct);
-
-  /**
    * Creates a new empty shopping cart. Initializes the cart with default values and saves it to the database.
    *
    * @return newly created Cart entity

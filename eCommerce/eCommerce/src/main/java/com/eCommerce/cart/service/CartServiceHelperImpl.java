@@ -7,6 +7,7 @@ import com.eCommerce.cart.dto.CartDtoIn;
 import com.eCommerce.cart.dto.CartDtoOut;
 import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.repository.CartRep;
+import com.eCommerce.exception.ApiErrorCode;
 import com.eCommerce.exception.ApiException;
 import com.eCommerce.orders.dto.OrderDtoOut;
 import com.eCommerce.orders.model.Orders;
@@ -34,7 +35,7 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   public Cart searchCartById(String idCart) {
 
     Optional<Cart> cartOpt = cartRep.findById(idCart);
-    if (cartOpt.isEmpty()) throw new ApiException("Cart with ID '" + idCart + "' not found", HttpStatus.CONFLICT);
+    if (cartOpt.isEmpty()) throw new ApiException(ApiErrorCode.CART_NOT_FOUND.getMessage(idCart), ApiErrorCode.CART_NOT_FOUND.getStatus());
     return cartOpt.get();
   }
 
@@ -42,7 +43,8 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   public Product searchProductById(String idProduct) {
 
     Optional<Product> productOpt = productRep.findById(idProduct);
-    if (productOpt.isEmpty()) throw new ApiException("Product with ID '" + idProduct + "' not found", HttpStatus.CONFLICT);
+    if (productOpt.isEmpty())
+      throw new ApiException(ApiErrorCode.PRODUCT_NOT_FOUND.getMessage(idProduct), ApiErrorCode.PRODUCT_NOT_FOUND.getStatus());
     return productOpt.get();
 
   }
@@ -50,9 +52,10 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   @Override
   public boolean chkCartDtoInList(List<CartDtoIn> cartDtoInList) {
 
-    if (cartDtoInList.isEmpty()) throw new ApiException("We can´t add products list empty", HttpStatus.CONFLICT);
+    if (cartDtoInList.isEmpty()) throw new ApiException(ApiErrorCode.EMPTY_CART_LIST.getMessage(), ApiErrorCode.EMPTY_CART_LIST.getStatus());
 
-    if (!chkAllCartAreTheSame(cartDtoInList)) throw new ApiException("The list have differents carts", HttpStatus.CONFLICT);
+    if (!chkAllCartAreTheSame(cartDtoInList))
+      throw new ApiException(ApiErrorCode.DIFFERENT_CARTS.getMessage(), ApiErrorCode.DIFFERENT_CARTS.getStatus());
 
     return true;
   }
@@ -60,9 +63,9 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   @Override
   public boolean chkDatainCartDto(CartDtoIn cartDtoIn) {
 
-    if (cartDtoIn.getIdCart() == null) throw new ApiException("IdCart must not be null", HttpStatus.CONFLICT);
-    if (cartDtoIn.getIdProduct() == null) throw new ApiException("IdProduct must not be null", HttpStatus.CONFLICT);
-    if (cartDtoIn.getQuantity() == null) throw new ApiException("Quantity of product must not be null", HttpStatus.CONFLICT);
+    if (cartDtoIn.getIdCart() == null) throw new ApiException(ApiErrorCode.CART_ID_NULL.getMessage(), ApiErrorCode.CART_ID_NULL.getStatus());
+    if (cartDtoIn.getIdProduct() == null) throw new ApiException(ApiErrorCode.PRODUCT_ID_NULL.getMessage(), ApiErrorCode.PRODUCT_ID_NULL.getStatus());
+    if (cartDtoIn.getQuantity() == null) throw new ApiException(ApiErrorCode.QUANTITY_NULL.getMessage(), ApiErrorCode.QUANTITY_NULL.getStatus());
 
     return true;
   }
@@ -90,8 +93,8 @@ public class CartServiceHelperImpl implements CartServiceHelper {
 
     } else {
       if (quantity < 0)
-        throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' must be greater than 0", HttpStatus.CONFLICT);
-      throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' not in stock", HttpStatus.CONFLICT);
+        throw new ApiException(ApiErrorCode.INVALID_QUANTITY.getMessage(product.getIdProduct()), ApiErrorCode.INVALID_QUANTITY.getStatus());
+      throw new ApiException(ApiErrorCode.INSUFFICIENT_STOCK.getMessage(product.getIdProduct()), ApiErrorCode.INSUFFICIENT_STOCK.getStatus());
     }
 
   }
@@ -122,8 +125,8 @@ public class CartServiceHelperImpl implements CartServiceHelper {
     } else {
 
       if (quantity < 0)
-        throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' must be greater than 0", HttpStatus.CONFLICT);
-      throw new ApiException("The quantity of Product with ID '" + product.getIdProduct() + "' not in stock", HttpStatus.CONFLICT);
+        throw new ApiException(ApiErrorCode.INVALID_QUANTITY.getMessage(product.getIdProduct()), ApiErrorCode.INVALID_QUANTITY.getStatus());
+      throw new ApiException(ApiErrorCode.INSUFFICIENT_STOCK.getMessage(product.getIdProduct()), ApiErrorCode.INSUFFICIENT_STOCK.getStatus());
     }
 
   }
@@ -174,26 +177,10 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   @Override
   public void deleteCart(String idCart) {
 
-    if (idCart == null) throw new ApiException("IdCart must not be null", HttpStatus.CONFLICT);
-    if (!cartRep.existsById(idCart)) throw new ApiException("Cart with ID '" + idCart + "' not exits", HttpStatus.CONFLICT);
+    if (idCart == null) throw new ApiException(ApiErrorCode.CART_ID_NULL.getMessage(), ApiErrorCode.CART_ID_NULL.getStatus());
+    if (!cartRep.existsById(idCart)) throw new ApiException(ApiErrorCode.CART_NOT_FOUND.getMessage(idCart), ApiErrorCode.CART_NOT_FOUND.getStatus());
 
     cartRep.deleteById(idCart);
-
-  }
-
-  @Override
-  public void removeProductFromCart(String idCart, String idProduct) {
-
-    if (idCart == null) throw new ApiException("IdCart must not be null", HttpStatus.CONFLICT);
-    if (idProduct == null) throw new ApiException("IdProduct must not be null", HttpStatus.CONFLICT);
-
-    OrdersPk orderPk = new OrdersPk(idCart, idProduct);
-    Optional<Orders> optionalOrder = orderRep.findById(orderPk);
-
-    if (optionalOrder.isEmpty())
-      throw new ApiException("Order for idCart/idProduct'" + idProduct + "'/" + idCart + "' not exits", HttpStatus.CONFLICT);
-
-    orderRep.deleteById(orderPk);
 
   }
 

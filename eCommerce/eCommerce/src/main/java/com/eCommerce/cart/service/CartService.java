@@ -30,16 +30,6 @@ public interface CartService {
   void updateCart(CartDtoIn cartDtoIn);
 
   /**
-   * Removes a product from the cart.
-   * 
-   * @param idCart
-   *          ID of the cart.
-   * @param idProduct
-   *          ID of the product.
-   */
-  void removeProductFromCart(String idCart, String idProduct);
-
-  /**
    * Retrieves a cart by its ID.
    * 
    * @param idCart
