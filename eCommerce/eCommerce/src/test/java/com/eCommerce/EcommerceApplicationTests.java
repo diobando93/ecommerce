@@ -6,19 +6,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import com.eCommerce.cart.dto.CartDtoIn;
 import com.eCommerce.cart.dto.CartDtoOut;
 import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.repository.CartRep;
-import com.eCommerce.cart.service.CartServiceHelper;
 import com.eCommerce.cart.service.CartServiceImpl;
+import com.eCommerce.cart.service.helper.CartMapper;
+import com.eCommerce.cart.service.helper.CartValidator;
 import com.eCommerce.exception.ApiErrorCode;
 import com.eCommerce.exception.ApiException;
+import com.eCommerce.orders.model.Order;
 import com.eCommerce.product.model.Product;
 import com.eCommerce.product.repository.ProductRep;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,16 +33,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 class EcommerceApplicationTests {
 
   @Mock
-  private CartRep           cartRep;
-
+  private CartRep         cartRep;
   @Mock
-  private ProductRep        productRep;
-
+  private ProductRep      productRep;
   @Mock
-  private CartServiceHelper cartServiceHelper;
+  private CartMapper      cartMapper;
+  @Mock
+  private CartValidator   cartValidator;
 
   @InjectMocks
-  private CartServiceImpl   cartService;
+  private CartServiceImpl cartService;
 
   @BeforeEach
   void setUp() {
@@ -49,143 +50,144 @@ class EcommerceApplicationTests {
   }
 
   @Test
-  void contextLoads() {
-  }
-
-  @Test
-  void createCart_ShouldReturnCartDtoOut() {
-    Cart mockCart = new Cart();
-    CartDtoOut mockCartDtoOut = new CartDtoOut();
-    when(cartServiceHelper.createCart()).thenReturn(mockCart);
-    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
+  void createCart_Success() {
+    Cart cart = new Cart();
+    CartDtoOut cartDto = new CartDtoOut();
+    when(cartRep.save(any())).thenReturn(cart);
+    when(cartMapper.toDto(cart)).thenReturn(cartDto);
 
     CartDtoOut result = cartService.createCart();
 
     assertNotNull(result);
-    verify(cartServiceHelper).createCart();
-    verify(cartServiceHelper).convertCartToDtoOut(mockCart);
+    verify(cartRep).save(any());
+    verify(cartMapper).toDto(cart);
   }
 
   @Test
-  void addProductsToCart_ShouldReturnCartDtoOut() {
-    CartDtoIn cartDtoIn = new CartDtoIn("1", "101", 2);
-    Cart mockCart = new Cart();
-    Product mockProduct = new Product();
-    CartDtoOut mockCartDtoOut = new CartDtoOut();
+  void addProductsToCart_Success() {
+    CartDtoIn dto = new CartDtoIn("1", "101", 2);
+    Cart cart = new Cart();
+    Product product = new Product();
+    CartDtoOut cartDto = new CartDtoOut();
+    product.setIdProduct("101");
+    product.setPrice(33.6);
 
-    when(cartServiceHelper.chkCartDtoInList(Collections.singletonList(cartDtoIn))).thenReturn(true);
-    when(cartServiceHelper.searchCartById("1")).thenReturn(mockCart);
-    when(cartServiceHelper.chkDatainCartDto(cartDtoIn)).thenReturn(true);
-    when(cartServiceHelper.searchProductById("101")).thenReturn(mockProduct);
-    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
+    when(cartRep.findById("1")).thenReturn(Optional.of(cart));
+    when(productRep.findById("101")).thenReturn(Optional.of(product));
+    when(cartMapper.toDto(cart)).thenReturn(cartDto);
 
-    CartDtoOut result = cartService.addProductsToCart(Collections.singletonList(cartDtoIn));
+    CartDtoOut result = cartService.addProductsToCart(List.of(dto));
 
     assertNotNull(result);
-    verify(cartServiceHelper).createOrUpdateCart(mockCart, mockProduct, 2);
+    verify(cartValidator).validateCartDtoInList(any());
+    verify(cartValidator).validateCartDtoData(dto);
+    verify(cartValidator).validateQuantityAndStock(product, 2);
+    verify(cartRep).save(cart);
   }
 
   @Test
-  void updateCart_ShouldReturnCartDtoOut() {
-    CartDtoIn cartDtoIn = new CartDtoIn("1", "101", 2);
-    Cart mockCart = new Cart();
-    Product mockProduct = new Product();
-    CartDtoOut mockCartDtoOut = new CartDtoOut();
+  void updateCart_Success() {
+    CartDtoIn dto = new CartDtoIn("1", "101", 2);
+    Cart cart = new Cart();
+    Product product = new Product();
+    product.setIdProduct("101");
+    product.setPrice(33.6);
 
-    when(cartServiceHelper.chkDatainCartDto(cartDtoIn)).thenReturn(true);
-    when(cartServiceHelper.searchCartById("1")).thenReturn(mockCart);
-    when(cartServiceHelper.searchProductById("101")).thenReturn(mockProduct);
-    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
+    Order order = new Order();
+    order.setProduct(product);
+    cart.addOrder(order);
 
-    CartDtoOut result = cartService.updateCart(cartDtoIn);
+    CartDtoOut cartDto = new CartDtoOut();
+
+    when(cartRep.findById("1")).thenReturn(Optional.of(cart));
+    when(productRep.findById("101")).thenReturn(Optional.of(product));
+    when(cartMapper.toDto(cart)).thenReturn(cartDto);
+
+    CartDtoOut result = cartService.updateCart(dto);
 
     assertNotNull(result);
-    verify(cartServiceHelper).updateCart(mockCart, mockProduct, 2);
+    verify(cartValidator).validateCartDtoData(dto);
+    verify(cartValidator).validateUpdateQuantity(product, 2);
+    verify(cartValidator).validateOrder(any(), eq(cart), eq(product));
+    verify(cartRep).save(cart);
   }
 
   @Test
-  void getCart_ShouldReturnCartDtoOut() {
-    // Arrange
-    Cart mockCart = new Cart();
-    CartDtoOut mockCartDtoOut = new CartDtoOut();
-
-    when(cartServiceHelper.searchCartById("1")).thenReturn(mockCart);
-    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
-
-    // Act
-    CartDtoOut result = cartService.getCart("1");
-
-    // Assert
-    assertNotNull(result);
-    verify(cartServiceHelper, times(1)).searchCartById("1");
-    verify(cartServiceHelper, times(1)).convertCartToDtoOut(mockCart);
-  }
-
-  @Test
-  void getCart_ShouldThrowException_WhenCartNotFound() {
-    // Arrange
+  void deleteCart_Success() {
     String cartId = "1";
-    when(cartServiceHelper.searchCartById(cartId))
-        .thenThrow(new ApiException(ApiErrorCode.CART_NOT_FOUND.getMessage(cartId), ApiErrorCode.CART_NOT_FOUND.getStatus()));
+    when(cartRep.existsById(cartId)).thenReturn(true);
 
-    // Act & Assert
+    cartService.deleteCart(cartId);
+
+    verify(cartValidator).validateCartToDelete(cartId, false);
+    verify(cartRep).deleteById(cartId);
+  }
+
+  @Test
+  void validateCartNotFound_ThrowsException() {
+    String cartId = "1";
+    when(cartRep.findById(cartId)).thenReturn(Optional.empty());
+
     ApiException exception = assertThrows(ApiException.class, () -> cartService.getCart(cartId));
 
     assertEquals(ApiErrorCode.CART_NOT_FOUND.getMessage(cartId), exception.getMessage());
   }
 
   @Test
-  void updateCart_ShouldThrowException_WhenProductNotInStock() {
-    // Arrange
+  void getCart_Success() {
+    Cart cart = new Cart();
+    CartDtoOut cartDto = new CartDtoOut();
+
+    when(cartRep.findById("1")).thenReturn(Optional.of(cart));
+    when(cartMapper.toDto(cart)).thenReturn(cartDto);
+
+    CartDtoOut result = cartService.getCart("1");
+
+    assertNotNull(result);
+    verify(cartRep).findById("1");
+    verify(cartMapper).toDto(cart);
+  }
+
+  @Test
+  void getCart_NotFound_ThrowsException() {
+    String cartId = "1";
+    when(cartRep.findById(cartId)).thenReturn(Optional.empty());
+
+    ApiException exception = assertThrows(ApiException.class, () -> cartService.getCart(cartId));
+
+    assertEquals(ApiErrorCode.CART_NOT_FOUND.getMessage(cartId), exception.getMessage());
+    verify(cartRep).findById(cartId);
+  }
+
+  @Test
+  void updateCart_InsufficientStock_ThrowsException() {
     String cartId = "1";
     String productId = "101";
-    int quantity = 100; // cantidad muy alta
-    CartDtoIn cartDtoIn = new CartDtoIn(cartId, productId, quantity);
+    CartDtoIn dto = new CartDtoIn(cartId, productId, 100);
+    Cart cart = new Cart();
+    Product product = new Product();
+    product.setAmount(10);
 
-    Cart mockCart = new Cart();
-    Product mockProduct = new Product();
-    mockProduct.setAmount(10);
+    when(cartRep.findById(cartId)).thenReturn(Optional.of(cart));
+    when(productRep.findById(productId)).thenReturn(Optional.of(product));
+    doThrow(new ApiException(ApiErrorCode.INSUFFICIENT_STOCK.getMessage(productId), ApiErrorCode.INSUFFICIENT_STOCK.getStatus())).when(cartValidator)
+        .validateUpdateQuantity(product, 100);
 
-    when(cartServiceHelper.chkDatainCartDto(cartDtoIn)).thenReturn(true);
-    when(cartServiceHelper.searchCartById(cartId)).thenReturn(mockCart);
-    when(cartServiceHelper.searchProductById(productId)).thenReturn(mockProduct);
-
-    doThrow(new ApiException(ApiErrorCode.INSUFFICIENT_STOCK.getMessage(productId), ApiErrorCode.INSUFFICIENT_STOCK.getStatus()))
-        .when(cartServiceHelper).updateCart(any(Cart.class), any(Product.class), eq(quantity));
-
-    // Act & Assert
-    ApiException exception = assertThrows(ApiException.class, () -> cartService.updateCart(cartDtoIn));
+    ApiException exception = assertThrows(ApiException.class, () -> cartService.updateCart(dto));
 
     assertEquals(ApiErrorCode.INSUFFICIENT_STOCK.getMessage(productId), exception.getMessage());
   }
 
   @Test
-  void addProductsToCart_ShouldThrowException_WhenValidationFails() {
-    // Arrange
-    String cartId = "1";
-    String productId = "101";
-    int quantity = 2;
-    CartDtoIn cartDtoIn = new CartDtoIn(cartId, productId, quantity);
-    List<CartDtoIn> cartDtoInList = Collections.singletonList(cartDtoIn);
+  void addProductsToCart_EmptyList_ThrowsException() {
+    CartDtoIn dto = new CartDtoIn("1", "101", 2);
+    List<CartDtoIn> dtos = List.of(dto);
 
-    when(cartServiceHelper.chkCartDtoInList(cartDtoInList))
-        .thenThrow(new ApiException(ApiErrorCode.EMPTY_CART_LIST.getMessage(), ApiErrorCode.EMPTY_CART_LIST.getStatus()));
+    doThrow(new ApiException(ApiErrorCode.EMPTY_CART_LIST.getMessage(), ApiErrorCode.EMPTY_CART_LIST.getStatus())).when(cartValidator)
+        .validateCartDtoInList(dtos);
 
-    // Act & Assert
-    ApiException exception = assertThrows(ApiException.class, () -> cartService.addProductsToCart(cartDtoInList));
+    ApiException exception = assertThrows(ApiException.class, () -> cartService.addProductsToCart(dtos));
 
     assertEquals(ApiErrorCode.EMPTY_CART_LIST.getMessage(), exception.getMessage());
-  }
-
-  @Test
-  void deleteCart_ShouldCallHelperMethod() {
-    // Arrange
-    String cartId = "1";
-
-    // Act
-    cartService.deleteCart(cartId);
-
-    // Assert
-    verify(cartServiceHelper).deleteCart(cartId);
   }
 }

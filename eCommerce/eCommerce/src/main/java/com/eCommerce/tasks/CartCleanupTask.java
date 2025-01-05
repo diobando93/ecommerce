@@ -16,7 +16,8 @@ public class CartCleanupTask {
 
   private static final Logger logger = LoggerFactory.getLogger(CartCleanupTask.class);
 
-  @Value("${cart.cleanup.minutes}") // El valor será configurable en application.properties
+  // Configure time for cleanup carts in application.properties
+  @Value("${cart.cleanup.minutes}")
   private int                 minutes;
 
   @Autowired
