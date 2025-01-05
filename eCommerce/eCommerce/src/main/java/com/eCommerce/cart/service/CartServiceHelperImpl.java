@@ -10,13 +10,11 @@ import com.eCommerce.cart.repository.CartRep;
 import com.eCommerce.exception.ApiErrorCode;
 import com.eCommerce.exception.ApiException;
 import com.eCommerce.orders.dto.OrderDtoOut;
-import com.eCommerce.orders.model.Orders;
-import com.eCommerce.orders.model.OrdersPk;
-import com.eCommerce.orders.repository.OrderRep;
+import com.eCommerce.orders.model.Order;
+import com.eCommerce.orders.model.OrderPk;
 import com.eCommerce.product.model.Product;
 import com.eCommerce.product.repository.ProductRep;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -27,9 +25,6 @@ public class CartServiceHelperImpl implements CartServiceHelper {
 
   @Autowired
   private ProductRep productRep;
-
-  @Autowired
-  private OrderRep   orderRep;
 
   @Override
   public Cart searchCartById(String idCart) {
@@ -75,21 +70,20 @@ public class CartServiceHelperImpl implements CartServiceHelper {
 
     if (quantity > 0 && chkStockOfProdcut(product, quantity)) {
 
-      OrdersPk orderPk = new OrdersPk(cart.getIdCart(), product.getIdProduct());
-      Optional<Orders> orderOpt = orderRep.findById(orderPk);
+      OrderPk orderPk = new OrderPk(cart.getIdCart(), product.getIdProduct());
+      Optional<Order> orderOpt = cart.getOrders().stream().filter(o -> o.getProduct().getIdProduct().equals(product.getIdProduct())).findFirst();
 
       if (!orderOpt.isEmpty()) {
         // update order and cart
         updateOrder(orderOpt.get(), product, quantity);
-        cart.setUpdatedAt(LocalDateTime.now());
-        orderRep.save(orderOpt.get());
-        cartRep.save(cart);
+
       } else {
         // create order and update cart
         createNewOrder(orderPk, cart, product, quantity);
-        cart.setUpdatedAt(LocalDateTime.now());
-        cartRep.save(cart);
+
       }
+      cart.setUpdatedAt(LocalDateTime.now());
+      cartRep.save(cart);
 
     } else {
       if (quantity < 0)
@@ -102,24 +96,23 @@ public class CartServiceHelperImpl implements CartServiceHelper {
   @Override
   public void updateCart(Cart cart, Product product, int quantity) {
 
-    OrdersPk orderPk = new OrdersPk(cart.getIdCart(), product.getIdProduct());
-    Optional<Orders> orderOpt = orderRep.findById(orderPk);
+    Optional<Order> orderOpt = cart.getOrders().stream().filter(o -> o.getProduct().getIdProduct().equals(product.getIdProduct())).findFirst();
 
-    if (orderOpt.isEmpty())
-      throw new ApiException("Order for idCart/idProduct: '" + cart.getIdCart() + "'/" + product.getIdProduct() + "' not exits", HttpStatus.CONFLICT);
+    if (orderOpt.isEmpty()) throw new ApiException(ApiErrorCode.ORDER_NOT_EXISTS.getMessage(cart.getIdCart(), product.getIdProduct()),
+        ApiErrorCode.ORDER_NOT_EXISTS.getStatus());
 
-    Orders order = orderOpt.get();
+    Order order = orderOpt.get();
 
     if (quantity > 0 && chkStockOfProdcut(product, quantity)) {
 
       order.setQuantity(quantity);
       order.setSubTotal(quantity * product.getPrice());
       cart.setUpdatedAt(LocalDateTime.now());
-      orderRep.save(order);
       cartRep.save(cart);
+
     } else if (quantity == 0) {
 
-      orderRep.deleteById(orderPk);
+      cart.removeOrder(order);
       cart.setUpdatedAt(LocalDateTime.now());
 
     } else {
@@ -144,7 +137,7 @@ public class CartServiceHelperImpl implements CartServiceHelper {
     cartDtoOut.setIdCart(cart.getIdCart());
     cartDtoOut.setOrders(cart.getOrders().stream()
         .map(order -> new OrderDtoOut(order.getProduct().getIdProduct(), order.getQuantity(), order.getSubTotal())).toList());
-    double totalPrice = cart.getOrders().stream().mapToDouble(Orders::getSubTotal).sum();
+    double totalPrice = cart.getOrders().stream().mapToDouble(Order::getSubTotal).sum();
     cart.setTotalPrice(totalPrice);
     cartDtoOut.setTotalPrice(totalPrice);
     cartDtoOut.setTotalPrice(cart.getTotalPrice());
@@ -159,17 +152,17 @@ public class CartServiceHelperImpl implements CartServiceHelper {
     return cartDtoInList.stream().map(CartDtoIn::getIdCart).distinct().count() == 1;
   }
 
-  public void createNewOrder(OrdersPk orderPk, Cart cart, Product product, int quantity) {
-    Orders newOrder = new Orders();
+  public void createNewOrder(OrderPk orderPk, Cart cart, Product product, int quantity) {
+    Order newOrder = new Order();
     newOrder.setOrderPk(orderPk);
     newOrder.setCart(cart);
     newOrder.setProduct(product);
     newOrder.setQuantity(quantity);
     newOrder.setSubTotal(newOrder.getQuantity() * product.getPrice());
-    orderRep.save(newOrder);
+    cart.addOrder(newOrder);
   }
 
-  public void updateOrder(Orders order, Product product, int quantity) {
+  public void updateOrder(Order order, Product product, int quantity) {
     order.setQuantity(quantity + order.getQuantity());
     order.setSubTotal(order.getQuantity() * product.getPrice());
   }

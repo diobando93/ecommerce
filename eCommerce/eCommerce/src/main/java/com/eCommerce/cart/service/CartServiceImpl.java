@@ -15,9 +15,10 @@ public class CartServiceImpl implements CartService {
   private CartServiceHelper cartServiceHelper;
 
   @Override
-  public Cart createCart() {
+  public CartDtoOut createCart() {
 
-    return cartServiceHelper.createCart();
+    Cart cart = cartServiceHelper.createCart();
+    return cartServiceHelper.convertCartToDtoOut(cart);
 
   }
 
@@ -30,14 +31,13 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public void addProductsToCart(List<CartDtoIn> cartDtoInList) {
+  public CartDtoOut addProductsToCart(List<CartDtoIn> cartDtoInList) {
 
+    Cart cart = new Cart();
     if (cartServiceHelper.chkCartDtoInList(cartDtoInList)) {
-
+      cart = cartServiceHelper.searchCartById(cartDtoInList.get(0).getIdCart());
       for (CartDtoIn cartDtoIn : cartDtoInList) {
-
         if (cartServiceHelper.chkDatainCartDto(cartDtoIn)) {
-          Cart cart = cartServiceHelper.searchCartById(cartDtoIn.getIdCart());
           Product product = cartServiceHelper.searchProductById(cartDtoIn.getIdProduct());
           cartServiceHelper.createOrUpdateCart(cart, product, cartDtoIn.getQuantity().intValue());
         }
@@ -45,17 +45,21 @@ public class CartServiceImpl implements CartService {
       }
 
     }
+    return cartServiceHelper.convertCartToDtoOut(cart);
 
   }
 
   @Override
-  public void updateCart(CartDtoIn cartDtoIn) {
+  public CartDtoOut updateCart(CartDtoIn cartDtoIn) {
 
+    Cart cart = new Cart();
     if (cartServiceHelper.chkDatainCartDto(cartDtoIn)) {
-      Cart cart = cartServiceHelper.searchCartById(cartDtoIn.getIdCart());
+      cart = cartServiceHelper.searchCartById(cartDtoIn.getIdCart());
       Product product = cartServiceHelper.searchProductById(cartDtoIn.getIdProduct());
       cartServiceHelper.updateCart(cart, product, cartDtoIn.getQuantity().intValue());
     }
+
+    return cartServiceHelper.convertCartToDtoOut(cart);
 
   }
 

@@ -19,7 +19,6 @@ import com.eCommerce.cart.service.CartServiceHelper;
 import com.eCommerce.cart.service.CartServiceImpl;
 import com.eCommerce.exception.ApiErrorCode;
 import com.eCommerce.exception.ApiException;
-import com.eCommerce.orders.repository.OrderRep;
 import com.eCommerce.product.model.Product;
 import com.eCommerce.product.repository.ProductRep;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,9 +38,6 @@ class EcommerceApplicationTests {
   private ProductRep        productRep;
 
   @Mock
-  private OrderRep          orderRep;
-
-  @Mock
   private CartServiceHelper cartServiceHelper;
 
   @InjectMocks
@@ -57,42 +53,54 @@ class EcommerceApplicationTests {
   }
 
   @Test
-  void createCart_ShouldReturnNewCart() {
-    // Arrange
-    // Arrange
+  void createCart_ShouldReturnCartDtoOut() {
     Cart mockCart = new Cart();
+    CartDtoOut mockCartDtoOut = new CartDtoOut();
     when(cartServiceHelper.createCart()).thenReturn(mockCart);
+    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
 
-    // Act
-    Cart result = cartService.createCart();
+    CartDtoOut result = cartService.createCart();
 
-    // Assert
     assertNotNull(result);
-    verify(cartServiceHelper, times(1)).createCart();
+    verify(cartServiceHelper).createCart();
+    verify(cartServiceHelper).convertCartToDtoOut(mockCart);
   }
 
   @Test
-  void addProductsToCart_ShouldCallHelperMethods() {
+  void addProductsToCart_ShouldReturnCartDtoOut() {
     CartDtoIn cartDtoIn = new CartDtoIn("1", "101", 2);
     Cart mockCart = new Cart();
     Product mockProduct = new Product();
-    mockProduct.setAmount(10);
+    CartDtoOut mockCartDtoOut = new CartDtoOut();
 
-    // Mock todos los métodos necesarios
     when(cartServiceHelper.chkCartDtoInList(Collections.singletonList(cartDtoIn))).thenReturn(true);
-    when(cartServiceHelper.chkDatainCartDto(cartDtoIn)).thenReturn(true); // Agregar este mock
+    when(cartServiceHelper.searchCartById("1")).thenReturn(mockCart);
+    when(cartServiceHelper.chkDatainCartDto(cartDtoIn)).thenReturn(true);
+    when(cartServiceHelper.searchProductById("101")).thenReturn(mockProduct);
+    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
+
+    CartDtoOut result = cartService.addProductsToCart(Collections.singletonList(cartDtoIn));
+
+    assertNotNull(result);
+    verify(cartServiceHelper).createOrUpdateCart(mockCart, mockProduct, 2);
+  }
+
+  @Test
+  void updateCart_ShouldReturnCartDtoOut() {
+    CartDtoIn cartDtoIn = new CartDtoIn("1", "101", 2);
+    Cart mockCart = new Cart();
+    Product mockProduct = new Product();
+    CartDtoOut mockCartDtoOut = new CartDtoOut();
+
+    when(cartServiceHelper.chkDatainCartDto(cartDtoIn)).thenReturn(true);
     when(cartServiceHelper.searchCartById("1")).thenReturn(mockCart);
     when(cartServiceHelper.searchProductById("101")).thenReturn(mockProduct);
+    when(cartServiceHelper.convertCartToDtoOut(mockCart)).thenReturn(mockCartDtoOut);
 
-    // Act
-    cartService.addProductsToCart(Collections.singletonList(cartDtoIn));
+    CartDtoOut result = cartService.updateCart(cartDtoIn);
 
-    // Assert
-    verify(cartServiceHelper, times(1)).chkCartDtoInList(Collections.singletonList(cartDtoIn));
-    verify(cartServiceHelper, times(1)).chkDatainCartDto(cartDtoIn);
-    verify(cartServiceHelper, times(1)).searchCartById("1");
-    verify(cartServiceHelper, times(1)).searchProductById("101");
-    verify(cartServiceHelper, times(1)).createOrUpdateCart(mockCart, mockProduct, 2);
+    assertNotNull(result);
+    verify(cartServiceHelper).updateCart(mockCart, mockProduct, 2);
   }
 
   @Test

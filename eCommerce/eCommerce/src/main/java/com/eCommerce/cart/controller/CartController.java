@@ -3,7 +3,6 @@ package com.eCommerce.cart.controller;
 import java.util.List;
 import com.eCommerce.cart.dto.CartDtoIn;
 import com.eCommerce.cart.dto.CartDtoOut;
-import com.eCommerce.cart.model.Cart;
 import com.eCommerce.cart.service.CartService;
 import com.eCommerce.exception.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,9 +43,27 @@ public class CartController {
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Cart created successfully"),
       @ApiResponse(responseCode = "500", description = "Internal server error") })
   @PostMapping
-  public ResponseEntity<Cart> createCart() {
-    Cart cart = cartService.createCart();
-    return ResponseEntity.ok(cart);
+  public ResponseEntity<CartDtoOut> createCart() {
+    CartDtoOut cartDtoOut = cartService.createCart();
+    return ResponseEntity.ok(cartDtoOut);
+  }
+
+  /**
+   * Retrieves cart information by ID.
+   *
+   * @param idCart
+   *          unique identifier of the cart
+   * @return CartDtoOut containing cart details and its items
+   * @throws ApiException
+   *           if cart not found
+   */
+  @Operation(summary = "Get cart by ID", description = "Retrieve a cart by its ID")
+  @ApiResponses(
+      value = { @ApiResponse(responseCode = "200", description = "Cart found"), @ApiResponse(responseCode = "404", description = "Cart not found") })
+  @GetMapping("/{idCart}")
+  public ResponseEntity<CartDtoOut> getCart(@PathVariable String idCart) {
+    CartDtoOut cartDtoOut = cartService.getCart(idCart);
+    return ResponseEntity.ok(cartDtoOut);
   }
 
   /**
@@ -63,9 +80,9 @@ public class CartController {
       @ApiResponse(responseCode = "400", description = "Invalid input provided"),
       @ApiResponse(responseCode = "404", description = "Cart or Product not found") })
   @PostMapping("/addProductToCart")
-  public ResponseEntity<Void> addProductToCart(@RequestBody List<CartDtoIn> cartDtoInList) {
-    cartService.addProductsToCart(cartDtoInList);
-    return ResponseEntity.ok().build();
+  public ResponseEntity<CartDtoOut> addProductToCart(@RequestBody List<CartDtoIn> cartDtoInList) {
+    CartDtoOut cartDtoOut = cartService.addProductsToCart(cartDtoInList);
+    return ResponseEntity.ok(cartDtoOut);
   }
 
   /**
@@ -84,26 +101,8 @@ public class CartController {
       @ApiResponse(responseCode = "400", description = "Invalid input provided"),
       @ApiResponse(responseCode = "404", description = "Cart or Product not found") })
   @PutMapping("/updateCart")
-  public ResponseEntity<Void> updateProductQuantity(@RequestBody CartDtoIn cartDtoIn) {
-    cartService.updateCart(cartDtoIn);
-    return ResponseEntity.ok().build();
-  }
-
-  /**
-   * Retrieves cart information by ID.
-   *
-   * @param idCart
-   *          unique identifier of the cart
-   * @return CartDtoOut containing cart details and its items
-   * @throws ApiException
-   *           if cart not found
-   */
-  @Operation(summary = "Get cart by ID", description = "Retrieve a cart by its ID")
-  @ApiResponses(
-      value = { @ApiResponse(responseCode = "200", description = "Cart found"), @ApiResponse(responseCode = "404", description = "Cart not found") })
-  @GetMapping("/{idCart}")
-  public ResponseEntity<CartDtoOut> getCart(@PathVariable String idCart) {
-    CartDtoOut cartDtoOut = cartService.getCart(idCart);
+  public ResponseEntity<CartDtoOut> updateProductQuantity(@RequestBody CartDtoIn cartDtoIn) {
+    CartDtoOut cartDtoOut = cartService.updateCart(cartDtoIn);
     return ResponseEntity.ok(cartDtoOut);
   }
 

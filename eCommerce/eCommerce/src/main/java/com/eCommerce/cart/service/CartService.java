@@ -12,22 +12,23 @@ public interface CartService {
    * 
    * @return the created {@link Cart}.
    */
-  Cart createCart();
+  CartDtoOut createCart();
 
   /**
    * Adds products to the cart. If the product already exists in the cart, its quantity is updated.
    * 
    * @param cartDtoInList
+   * @return
    * 
    */
-  void addProductsToCart(List<CartDtoIn> cartDtoInList);
+  CartDtoOut addProductsToCart(List<CartDtoIn> cartDtoInList);
 
   /**
    * Updates the quantity of a product in the cart.
    * 
    * @param cartDtoIn
    */
-  void updateCart(CartDtoIn cartDtoIn);
+  CartDtoOut updateCart(CartDtoIn cartDtoIn);
 
   /**
    * Retrieves a cart by its ID.
