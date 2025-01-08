@@ -5,7 +5,6 @@ API REST para gestión de carritos de compra y productos.
 ## Tecnologías
 - Java 17
 - Spring Boot 3.2.2
-- H2 Database
 
 ## Ejecución
 
